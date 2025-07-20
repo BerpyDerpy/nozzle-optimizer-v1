@@ -1,0 +1,45 @@
+data:
+  config:
+    ambPressure: 101324.99998565002
+    burnoutThrustThres: 0.1
+    burnoutWebThres: 2.5400050800101604e-05
+    flowSeparationWarnPercent: 0.05
+    mapDim: 750
+    maxMassFlux: 1406.4697609001405
+    maxPressure: 6895000.000000001
+    minPortThroat: 2.0
+    sepPressureRatio: 0.4
+    timestep: 0.03
+  grains:
+  - properties:
+      coreDiameter: 0.012
+      diameter: 0.024
+      inhibitedEnds: Neither
+      length: 0.08
+    type: BATES
+  nozzle:
+    convAngle: 30.0
+    divAngle: 15.0
+    efficiency: 0.9
+    erosionCoeff: 0.0
+    exit: 0.012
+    slagCoeff: 0.0
+    throat: 0.007
+    throatLength: 0.005
+  propellant:
+    density: 1670.0
+    name: MIT - Cherry Limeade
+    tabs:
+    - a: 3.517054143255937e-05
+      k: 1.21
+      m: 23.67
+      maxPressure: 6895000.0
+      minPressure: 0.0
+      n: 0.3273
+      t: 2800.0
+type: !!python/object/apply:uilib.fileIO.fileTypes
+- 3
+version: !!python/tuple
+- 0
+- 6
+- 0
