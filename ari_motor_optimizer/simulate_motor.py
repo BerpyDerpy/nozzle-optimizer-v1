@@ -3,8 +3,8 @@ from uilib.fileIO import loadFile, fileTypes
 import copy
 
 MAX_PRESSURE_PSI = 1000
-BATES_TEMPLATE = "template2.ric"
-STAR_TEMPLATE = "templateStar.ric"
+BATES_TEMPLATE = "ari_motor_optimizer/template2.ric"
+STAR_TEMPLATE = "ari_motor_optimizer/templateStar.ric"
 
 bates_template_file = loadFile(BATES_TEMPLATE, fileTypes.MOTOR)
 bates_template_instance = Motor() 
@@ -14,40 +14,37 @@ star_template_file = loadFile(STAR_TEMPLATE, fileTypes.MOTOR)
 star_template_instance = Motor() 
 star_template_instance.applyDict(star_template_file)
 
-def simulate(grain, diameter,
-             bates_core_diameter, bates_length,
-             star_len, star_points, star_point_len, star_point_width,
-             convAngle,divAngle, nozzle_throat, nozzle_throat_length):
+def simulate(design):
 
-    bates_motor = copy.deepcopy(bates_template_instance)
-    star_motor = copy.deepcopy(star_template_instance)
 
-    
+    grain = round(design['grain_type'])
 
     if grain == 0:
-        bates_motor.grains[0].props['diameter'].setValue(diameter)
-        bates_motor.grains[0].props['coreDiameter'].setValue(bates_core_diameter)
-        bates_motor.grains[0].props['length'].setValue(bates_length)
-        bates_motor.nozzle.props['convAngle'].setValue(convAngle)
-        bates_motor.nozzle.props['divAngle'].setValue(divAngle)
-        bates_motor.nozzle.props['throat'].setValue(nozzle_throat)
-        bates_motor.nozzle.props['throatLength'].setValue(nozzle_throat_length)
-
-        sim_result = bates_motor.runSimulation()
+        motor = copy.deepcopy(bates_template_instance)
+        
+        motor.grains[0].props['coreDiameter'].setValue(design['bates_core_dia'])
+        motor.grains[0].props['length'].setValue(design['bates_len'])
+        
     
     elif grain == 1:
-        star_motor.grains[0].props['diameter'].setValue(diameter)
-        star_motor.grains[0].props['length'].setValue(star_len)
-        star_motor.grains[0].props['numPoints'].setValue(star_points)
-        star_motor.grains[0].props['pointLength'].setValue(star_point_len)
-        star_motor.grains[0].props['pointWidth'].setValue(star_point_width)
-        star_motor.nozzle.props['convAngle'].setValue(convAngle)
-        star_motor.nozzle.props['divAngle'].setValue(divAngle)
-        star_motor.nozzle.props['throat'].setValue(nozzle_throat)
-        star_motor.nozzle.props['throatLength'].setValue(nozzle_throat_length)
+        motor = copy.deepcopy(star_template_instance)
+        motor.grains[0].props['length'].setValue(design['star_len'])
+        motor.grains[0].props['numPoints'].setValue(design['star_points'])
+        motor.grains[0].props['pointLength'].setValue(design['star_point_len'])
+        motor.grains[0].props['pointWidth'].setValue(design['star_point_width'])
+    
+    motor.grains[0].props['diameter'].setValue(design['diameter'])
+    motor.nozzle.props['convAngle'].setValue(design['nozzle_convAngle'])
+    motor.nozzle.props['divAngle'].setValue(design['nozzle_divAngle'])
+    motor.nozzle.props['throat'].setValue(design['nozzle_throat_dia'])
+    motor.nozzle.props['exit'].setValue(design['nozzle_exit_dia'])
+    motor.nozzle.props['throatLength'].setValue(design['nozzle_throat_len'])
 
-        sim_result = star_motor.runSimulation()
-
+    try:
+        sim_result = motor.runSimulation()
+    except:
+        return MAX_PRESSURE_PSI + 1, 0 
+    
     if not sim_result.success:
         return MAX_PRESSURE_PSI + 1, 0  # (pressure, impulse)
     max_pressure = sim_result.getMaxPressure()
