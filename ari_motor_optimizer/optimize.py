@@ -58,13 +58,31 @@ class MotorProblem(ElementwiseProblem):
 
 if __name__ == "__main__":
 
+    initial_guess = np.array([[
+        1.0,      # grain_type (1 for Star)
+        0.03,     # diameter
+        0.005,    # bates_core_dia 
+        0.20,     # bates_len 
+        0.20,     # star_len
+        4.0,      # star_points
+        0.005,    # star_point_len
+        0.003,    # star_point_width
+        37.0,     # nozzle_convAngle
+        16.0,     # nozzle_divAngle
+        0.01653,  # nozzle_exit_dia
+        0.0069,   # nozzle_throat_dia
+        0.00785   # nozzle_throat_len
+    ]])
+
     problem = MotorProblem()
-    algorithm = NSGA2(pop_size=40)
+    algorithm = NSGA2(pop_size=40,
+                      sampling = initial_guess)
 
     os.system("clear")
     print("========= Starting Optimization =========")
     print(f"Current settings: no.of parameters : {len(params)} || no. of objectives : {n_obj}\n")
     
+   
 
     optimRES = minimize(problem=problem,
                         algorithm=algorithm,
