@@ -12,22 +12,22 @@ data:
     timestep: 0.03
   grains:
   - properties:
-      diameter: 0.024
+      diameter: 0.030
       inhibitedEnds: Neither
-      length: 0.06
-      numPoints: 3
-      pointLength: 0.01
-      pointWidth: 0.004
+      length: 0.020
+      numPoints: 4
+      pointLength: 0.005
+      pointWidth: 0.003
     type: Star Grain
   nozzle:
-    convAngle: 30.0
-    divAngle: 15.0
+    convAngle: 37.0
+    divAngle: 16.0
     efficiency: 0.9
     erosionCoeff: 0.0
     exit: 0.012
     slagCoeff: 0.0
-    throat: 0.007
-    throatLength: 0.005
+    throat: 0.0069
+    throatLength: 0.0078
   propellant:
     density: 1670.0
     name: MIT - Cherry Limeade
