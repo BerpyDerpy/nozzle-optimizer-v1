@@ -1,45 +1,69 @@
 from random import seed
-from pymoo.core.problem import Problem
+from pymoo.core.problem import ElementwiseProblem
 from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.core.variable import Real,Integer
 from pymoo.optimize import minimize
 import numpy as np
 import os
 
 from simulate_motor import simulate, MAX_PRESSURE_PSI
 
+gene = {
+            "grain_type" : (0,1), # Bates - 0, Star - 1
+            "diameter" : (0.01, 0.03),
+            "bates_core_dia" : (0.005, 0.03),
+            "bates_len" : (0.05, 0.2 ),
+            "star_len" : (0.05,0.20),
+            "star_points" : (3,8),
+            "star_point_len" : (0.005,0.03),
+            "star_point_width" : (0.003,0.008),
+            "nozzle_convAngle" : (20,60),
+            "nozzle_divAngle" : (12,18),
+            "nozzle_exit_dia" : (0.004,0.025),
+            "nozzle_throat_dia" : (0.003,0.015),
+            "nozzle_throat_len" : (0.006,0.015)
+        }
 
-class MotorProblem(Problem):
+params = list(gene.keys())
+xl = np.array([gene[key][0] for key in params])
+xu = np.array([gene[key][1] for key in params])
 
-    def _evaluate(self, designs, out, *args, **kwargs):
+n_obj = 1
 
-        res = []
+class MotorProblem(ElementwiseProblem):
 
-        for design in designs:
-            d,l,t,cA,dA,tl = design
-            res.append(simulate(d,l,t,cA,dA,tl))
+    def __init__(self):
+        super().__init__(n_var=len(params),
+                         n_obj = n_obj,
+                         n_ieq_constr = 1,
+                         xl = xl,
+                         xu = xu,
+                         )
+
+    def _evaluate(self, x, out, *args, **kwargs):
+
+        design = dict(zip(params,x))
         
-        res = np.array(res) # pymoo operates in numpy shiz
+        # rounding the stuff to integers since optimizer gives values as float 
+        design['grain_type'] = round(design['grain_type'])
+        design['star_points'] = round(design['star_points'])
+        design['nozzle_convAngle'] = round(design['nozzle_convAngle'])
+        design['nozzle_divAngle'] = round(design['nozzle_divAngle'])
 
-        pressures = res[:,0]
-        impulses = res[:,1]
+        pressure, impulse = simulate(design)
 
-        out['F'] = -impulses #minimize negative of impulses aka maximize | 'F' is for objectives
-        out['G'] = pressures - MAX_PRESSURE_PSI # 'G" is for constraints | fails if constraint <= 0
+        out['F'] = -impulse #minimize negative of impulses aka maximize | 'F' is for objectives
+        out['G'] = pressure - MAX_PRESSURE_PSI # 'G" is for constraints | fails if constraint <= 0
 
 
 if __name__ == "__main__":
 
-    n_params = 6 #core dia, grain length and nozzle throat
-    n_obj = 1 # maximise total impulse
-    problem = MotorProblem(n_var = n_params,
-                           n_obj = n_obj,
-                           n_ieq_constr=1,
-                           xl=np.array([0.005, 0.05,20,12, 0.003,0.2*0.003]),
-                           xu=np.array([0.03, 0.20,60,18, 0.015, 0.5*0.015]))
+    problem = MotorProblem()
     algorithm = NSGA2(pop_size=40)
+
     os.system("clear")
     print("========= Starting Optimization =========")
-    print(f"Current settings: no.of parameters : {n_params} || no. of objectives : {n_obj}")
+    print(f"Current settings: no.of parameters : {len(params)} || no. of objectives : {n_obj}\n")
     
 
     optimRES = minimize(problem=problem,
@@ -53,19 +77,33 @@ if __name__ == "__main__":
     print("=======================")
 
     if optimRES is not None:
-        best_params = optimRES.X
+        best_params = dict(zip(params,optimRES.X))
         best_performance = optimRES.F
         print(f"🏆 Best Design Found:")
-        print(f"Core diameter : {best_params[0]*1000:.2f} mm")
-        print(f"Grain length : {best_params[1]*100:.2f} cm")
-        print(f"Nozzle convergence Angle : {best_params[2]:.2f} degrees")
-        print(f"Nozzle divergence angle : {best_params[3]:.2f} degrees")
-        print(f"Nozzle throat diameter : {best_params[4]*1000:.2f} mm")
-        print(f"Nozzle throat length : {best_params[5]*1000:.2f} mm")
+        print(f"Diameter : {best_params['diameter']*1000:.2f} mm")
+        print(f"Nozzle convergence Angle : {round(best_params['nozzle_convAngle'])} degrees")
+        print(f"Nozzle divergence angle : {round(best_params['nozzle_divAngle'])} degrees")
+        print(f"Nozzle throat diameter : {best_params['nozzle_throat_dia']*1000:.2f} mm")
+        print(f"Nozzle exit diameter : {best_params['nozzle_exit_dia']*1000:.2f} mm")
+        print(f"Nozzle throat length : {best_params['nozzle_throat_len']*1000:.2f} mm")
+
+        if round(best_params['grain_type']) == 0:
+
+            print(f"Grain  : BATES")
+            print(f"Core diameter : {best_params['bates_core_dia']*1000:.2f} mm")
+            print(f"Grain length : {best_params['bates_len']*1000:.2f} mm")
+        
+        elif round(best_params['grain_type']) == 1:
+            print(f"Grain  : Star")
+            print(f"Grain length : {best_params['star_len']*1000:.2f} mm")
+            print(f"Num points : {round(best_params['star_points'])}")
+            print(f"Star point length : {best_params['star_point_len']*1000:.2f} mm")
+            print(f"Star point width : {best_params['star_point_width']*1000:.2f} mm")
+
         print("=======================")
         print(f"Achieved impulse : {-best_performance[0]:.2f} Ns")
 
         print("========= Simulating with best params =========")
-        sim_params = simulate(best_params[0],best_params[1],best_params[2],best_params[3],best_params[4],best_params[5])
+        sim_params = simulate(best_params)
         print(f"Pressure : {sim_params[0]:.2f} PSI")
         print(f"Impulse : {sim_params[1]:.2f} Ns")
